@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const mongoose = require('mongoose');
 
 const logger = require('morgan');
 const cookieParser = require('cookie-parser');
@@ -8,6 +9,19 @@ const bodyParser = require('body-parser');
 const index = require('./routes/index');
 
 const app = express();
+
+// CONNECT TO MONGODB SERVER
+var db = mongoose.connection;
+db.on('error', console.error);
+db.once('open', function(){
+    // CONNECTED TO MONGODB SERVER
+    console.log("Connected to mongod server");
+});
+
+mongoose.connect('mongodb://localhost/chat');
+
+// DEFINE MODEL
+var schedule = require('./models/schedule');
 
 app.use(logger('dev'));
 app.use(bodyParser.json());
@@ -34,6 +48,7 @@ app.use(function(err, req, res, next) {
   res.json({ err });
 });
 
+app.disable('etag');
 app.listen(process.env.PORT || 3000, () => console.log('Example app listening on port 3000!'));
 
 module.exports = app;

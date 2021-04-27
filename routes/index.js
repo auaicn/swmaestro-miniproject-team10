@@ -3,6 +3,48 @@ const express = require('express');
 const router = express.Router();
 
 const libKakaoWork = require('../libs/kakaoWork');
+const Schedule = require('../models/schedule');
+
+router.get('/getSchedule/:conversation_id', function(req,res){
+  Schedule.find({conversation_id: req.params.conversation_id},function(err,schedules){
+    if(err) return res.status(500).json({error:err});
+    if(!schedules) return res.status(404).json({error: 'schedules not found'});
+    console.log(schedules);
+    res.json(schedules);
+  }).sort({date:1})
+});
+
+router.post('/createSchedule',function(req,res){
+  var schedule = new Schedule();
+  schedule.conversation_id =req.body.conversation_id;
+  var kor_date = new Date(req.body.date);
+  kor_date = kor_date.getTime()+(3600000*9);
+
+  schedule.date = kor_date; //date가 없을 시 예외처리
+
+  schedule.content = req.body.content;
+  schedule.link = req.body.link;
+
+  schedule.save(function(err){
+    if(err){
+        console.error(err);
+        res.json({result: 0});
+        return;
+    }
+    res.json({result: 1});
+  });
+})
+
+router.get('/isAlarm/:conversation_id', function(req,res){
+  Schedule.find({conversation_id: req.params.conversation_id, 
+    date:{$gte:new Date(Date.now() + (3600000*9) - 1000 * 60 * 60),
+      $lt:new Date(Date.now() + (3600000*9) + 1000 * 60 * 60)} //한국시간 앞뒤 1시간
+    },function(err,schedules){
+    if(err) return res.status(500).json({error:err});
+    if(!schedules) return res.status(404).json({error: 'schedules not found'});
+    res.json(schedules);
+  })
+});
 
 router.get('/', async (req, res, next) => {
   // 유저 목록 검색 (1)

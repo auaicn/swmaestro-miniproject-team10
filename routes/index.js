@@ -5,14 +5,6 @@ const router = express.Router();
 const libKakaoWork = require('../libs/kakaoWork');
 const Schedule = require('../models/schedule');
 
-function getSchedule(conversationId){
-	Schedule.find({conversation_id: req.params.conversationId},function(err,schedules){
-    if(err) return res.status(500).json({error:err});
-    if(!schedules) return res.status(404).json({error: 'schedules not found'});
-    console.log(schedules);
-  }).sort({date:1})
-}
-
 router.get('/getSchedule/:conversation_id', function(req,res){
   Schedule.find({conversation_id: req.params.conversation_id},function(err,schedules){
     if(err) return res.status(500).json({error:err});
@@ -91,7 +83,7 @@ router.get('/', async (req, res, next) => {
             type: 'button',
             action_type: 'submit_action',
 						action_name: 'browseMemo',
-            value: '0',
+            value: '1',
             text: '메모 열람',
             style: 'default',
           },

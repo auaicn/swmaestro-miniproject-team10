@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 
 const index = require('./routes/index');
+const cron = require('./cron/index');
 
 const app = express();
 
@@ -50,5 +51,7 @@ app.use(function(err, req, res, next) {
 
 app.disable('etag');
 app.listen(process.env.PORT || 3000, () => console.log('Example app listening on port 3000!'));
+
+cron.cronAlarmJob();
 
 module.exports = app;

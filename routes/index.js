@@ -5,6 +5,14 @@ const router = express.Router();
 const libKakaoWork = require('../libs/kakaoWork');
 const Schedule = require('../models/schedule');
 
+function getSchedule(conversationId){
+	Schedule.find({conversation_id: req.params.conversationId},function(err,schedules){
+    if(err) return res.status(500).json({error:err});
+    if(!schedules) return res.status(404).json({error: 'schedules not found'});
+    console.log(schedules);
+  }).sort({date:1})
+}
+
 router.get('/getSchedule/:conversation_id', function(req,res){
   Schedule.find({conversation_id: req.params.conversation_id},function(err,schedules){
     if(err) return res.status(500).json({error:err});
@@ -81,8 +89,9 @@ router.get('/', async (req, res, next) => {
           },
 					{
             type: 'button',
-            action_type: 'call_modal',
-            value: 'browseMemo',
+            action_type: 'submit_action',
+						action_name: 'browseMemo',
+            value: '0',
             text: '메모 열람',
             style: 'default',
           },
@@ -100,14 +109,15 @@ router.get('/', async (req, res, next) => {
 });
 
 router.post('/request', async (req, res, next) => {
+	
   const { message, value } = req.body;
 
   switch (value) {
     case 'addMemo':
-      // 설문조사용 모달 전송
+      // 일정 추가용 모달 전송
       return res.json({
         view: {
-          title: 'modal title',
+          title: '일정 추가하기',
           accept: '확인',
           decline: '취소',
           value: 'addMemoResult',
@@ -163,11 +173,47 @@ router.post('/request', async (req, res, next) => {
 
 // routes/index.js
 router.post('/callback', async (req, res, next) => {
-  const { message, actions, action_time, value } = req.body; // 설문조사 결과 확인 (2)
-
-  switch (value) {
+	const { action_name, message, actions, action_time, value } = req.body;
+  switch (action_name) {
+		case 'browseMemo':
+			const conversationId = req.body.message.conversation_id; 
+			const currentPageNumber = parseInt(value)
+			libKakaoWork.showMemos({conversationId, currentPageNumber})
+			break;
+		case 'home':
+			return libKakaoWork.sendMessage({
+        conversationId: req.body.message.conversation_id,
+        text: '나와의 채팅',
+        blocks: [
+          {
+            type: 'header',
+            text: '나와의 채팅',
+            style: 'blue',
+          },
+          {
+            type: 'text',
+            text: '반갑습니다!\n메모 옵션을 선택해주세요.',
+            markdown: true,
+          },
+          {
+            type: 'button',
+            text: '메모 추가',
+            action_type: 'call_modal',
+            value: 'addMemo',
+            style: 'default',
+          },
+					{
+            type: 'button',
+            text: '메모 열람',
+            action_type: 'submit_action',
+						action_name: 'browseMemo',
+            value: '1',
+            style: 'default',
+          },
+        ],
+      })
+			break;
     case 'addMemoResult':
-      // 설문조사 응답 결과 메세지 전송 (3)
       await libKakaoWork.sendMessage({
         conversationId: message.conversation_id,
         text: '메모가 추가되었습니다!',

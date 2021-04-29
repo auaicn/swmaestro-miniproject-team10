@@ -18,7 +18,7 @@ db.once('open', function(){
     console.log("Connected to mongod server");
 });
 
-mongoose.connect('mongodb://localhost/chat');
+mongoose.connect('mongodb://localhost:27017/chat');
 
 // DEFINE MODEL
 var schedule = require('./models/schedule');

@@ -49,6 +49,7 @@ function getSchedule(conversationId){
     if(err) return res.status(500).json({error:err});
     if(!schedules) return res.status(404).json({error: 'schedules not found'});
     console.log(schedules);
+	return schedules;
   }).sort({date:1})
 }
 	
@@ -62,32 +63,24 @@ exports.showMemos = async ({ conversationId, currentPageNumber}) => {
 	// 1. conversation Id 를 가지고 전체 서치
 	// 2. 시간순 정렬
 	// 3. 현재 인덱스로 잘라서 출력
-	
-	// dbentries = []
-	// const numEntries 
-	// maxPageNumber = Math.floor( numEntries/ MAX_MEMOS_PER_PAGE) // 10 으로 나눠준다.
-	// 50개면 5페이지 나오고 49개면 5페이지 나온다.
-	// 0-10 -> 1페이지
-	// 11-20 -> 2페이지 
-	// floor 하는데, -1 해서 floor 해줘야 할듯. 0이었을때는 예외 처리 해주자.
-	// array1.forEach(element => console.log(element));
-	
-	currentPageMemos = [] // <- for 문 돌면서 출력해준다.
+	const dbEntries = getSchedule(conversationId);
+	const numEntries = dbEntries.length;
+	const maxPageNumber = parseInt(numEntries / MAX_MEMOS_PER_PAGE);
 
-	// sorting
-	// 현재 /10 한다 urrentPageNumber 
+	let actualUserMemos = [];
+	const startMemoIndex = MAX_MEMOS_PER_PAGE * (currentPageNumber - 1);
 	
-	const maxPageNumber = 4 // 전체 메세지 개수에 따른, 현재 페이지를 표시하기 위함이다. db 를 계속 봐야 하는것을 피할 수 없는데, 사용성이라도 높이려고 넣었습니다.
-	const actualUserMemos = []
-	
-	for (step = 0; step < 8; step++) {
-		actualUserMemos.push(
-			{
-				type: 'text',
-				text: '_text sample_ *link 🔗*',
-				markdown: true,
-			}
-		)
+	for (let step = startMemoIndex; step < startMemoIndex + MAX_MEMOS_PER_PAGE; step++) {
+		if (step < numEntries)
+		{
+			actualUserMemos.push(
+				{
+					type: 'text',
+					text: `${dbEntries[step].content}`,
+					markdown: true,
+				}
+			);
+		}
 	}
 	
 	// 이전, 다음 버튼 부분.

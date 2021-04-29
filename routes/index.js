@@ -1,10 +1,7 @@
 const express = require('express');
 const router = express.Router();
-
 const libKakaoWork = require('../libs/kakaoWork');
 const Schedule = require('../models/schedule');
-
-var count = 0;
 
 router.get('/getSchedule/:conversation_id', function(req,res){
   Schedule.find({conversation_id: req.params.conversation_id},function(err,schedules){
@@ -22,7 +19,6 @@ router.post('/createSchedule',function(req,res){
   kor_date = kor_date.getTime()+(3600000*9);
 
   schedule.date = kor_date; //date가 없을 시 예외처리
-
   schedule.content = req.body.content;
   schedule.link = req.body.link;
 
@@ -55,39 +51,36 @@ router.get('/', async (req, res, next) => {
   const conversations = await Promise.all(
     users.map((user) => libKakaoWork.openConversations({ userId: user.id }))
   );
-
-  // 생성된 채팅방에 메세지 전송 (3)
+	
   // 웰컴 메세지, 메모 추가 및 메모 열람 가능
   const messages = await Promise.all([
     conversations.map((conversation) =>
-      libKakaoWork.sendMessage({
-        conversationId: conversation.id,
-        text: '반갑습니다, 저는 나와의 채팅봇입니다!',
+			libKakaoWork.sendMessage({
+        conversationId: req.body.message.conversation_id,
+        text: '나와의 채팅',
         blocks: [
-          {
-            type: 'header',
-            text: '나와의 채팅',
-            style: 'blue',
-          },
+					{
+						type: 'image_link',
+						url: 'https://github.com/auaicn/web-fe-study/blob/master/colorbot.png?raw=true',
+					},
           {
             type: 'text',
-            text: '반갑습니다!\n메모 옵션을 선택해주세요.',
+            text: '나와의 채팅 _Bot_ 으로 보다 똑똑하게, 개인 채팅방 메시지를 관리해보세요.\n메세지를 통한 일정 · 알림 등록 기능, 메세지 최신순 열람 기능이 있습니다',
             markdown: true,
           },
           {
             type: 'button',
+            text: '메모 추가',
             action_type: 'call_modal',
             value: 'addMemo',
-			action_name: 'addMemo',
-            text: '메모 추가',
-            style: 'default',
+            style: 'primary',
           },
 					{
             type: 'button',
+            text: '메모 열람',
             action_type: 'submit_action',
 						action_name: 'browseMemo',
             value: 'browseMemo 1',
-            text: '메모 열람',
             style: 'default',
           },
         ],
@@ -102,8 +95,9 @@ router.get('/', async (req, res, next) => {
 });
 
 router.post('/request', async (req, res, next) => {
-  console.log(req.body);
   const { message, value } = req.body;
+	
+	date = new Date(Date.now() + (3600000*9) )  // current Time
 	
   switch (value) {
     case 'addMemo':
@@ -118,41 +112,36 @@ router.post('/request', async (req, res, next) => {
 		  blocks: [
 			{
 			  type: "label",
-			  text: "알림을 받을 날짜를 입력해주세요.",
-			  markdown: true
-			},
-			{
-			  type: "label",
-			  text: "예: 2017-08-28T17:22:21",
+			  text: "⏰ 알림을 받을 *날짜*를 입력해주세요\nex.2017-08-28T17:22:21\n_미입력시, *현재시간*으로 설정됩니다_",
 			  markdown: true
 			},
 			{
 			  type: "input",
 			  name: "input_date",
 			  required: false,
-			  placeholder: "날짜를 입력해주세요."
+			  placeholder: date.toISOString().split('.')[0]
 			},
 			{
 			  type: "label",
-			  text: "메모의 내용을 입력해주세요.",
-			  markdown: true
-			},
-			{
-			  type: "input",
-			  name: "input_description",
-			  required: false,
-			  placeholder: "내용을 입력해주세요."
-			},
-			{
-			  type: "label",
-			  text: "첨부 링크를 입력해주세요.",
+			  text: "첨부 링크를 입력해주세요",
 			  markdown: true
 			},
 			{
 			  type: "input",
 			  name: "input_link",
 			  required: false,
-			  placeholder: "링크를 입력해주세요."
+			  placeholder: "https://swmaestro.org/sw/main/main.do"
+			},
+			{
+			  type: "label",
+			  text: "메모의 내용을 입력해주세요.(필수)",
+			  markdown: true
+			},
+			{
+			  type: "input",
+			  name: "input_description",
+			  required: false,
+			  placeholder: "\n\n\n\n\n"
 			}
 		  ]
 		}
@@ -165,15 +154,13 @@ router.post('/request', async (req, res, next) => {
 });
 
 router.post('/callback', async (req, res, next) => {
-	 console.log(req.body);
 	const { action_name, message, actions, action_time, value } = req.body;
 
 	let currentPageNumber = 0, newValue = value;
-	if (value.includes('browseMemo'))
-    {
-        currentPageNumber = parseInt(value.slice(11));
-        newValue = 'browseMemo';
-    }
+	if (value.includes('browseMemo')){
+			currentPageNumber = parseInt(value.slice(11));
+			newValue = 'browseMemo';
+	}
 	
 	// value 값만 인식
   switch (newValue) {
@@ -182,18 +169,17 @@ router.post('/callback', async (req, res, next) => {
 			libKakaoWork.showMemos({conversationId, currentPageNumber});
 			break;
 		case 'home':
-			return libKakaoWork.sendMessage({
+			libKakaoWork.sendMessage({
         conversationId: req.body.message.conversation_id,
         text: '나와의 채팅',
         blocks: [
-          {
-            type: 'header',
-            text: '나와의 채팅',
-            style: 'blue',
-          },
+					{
+						type: 'image_link',
+						url: 'https://github.com/auaicn/web-fe-study/blob/master/colorbot.png?raw=true',
+					},
           {
             type: 'text',
-            text: '반갑습니다!\n메모 옵션을 선택해주세요.',
+            text: '나와의 채팅 _Bot_ 으로 보다 똑똑하게, 개인 채팅방 메시지를 관리해보세요.\n메세지를 통한 일정 · 알림 등록 기능, 메세지 최신순 열람 기능이 있습니다',
             markdown: true,
           },
           {
@@ -201,7 +187,7 @@ router.post('/callback', async (req, res, next) => {
             text: '메모 추가',
             action_type: 'call_modal',
             value: 'addMemo',
-            style: 'default',
+            style: 'primary',
           },
 					{
             type: 'button',
@@ -216,36 +202,24 @@ router.post('/callback', async (req, res, next) => {
 			break;
     case 'addMemoResult':
       try{
-			var schedule = new Schedule();
-				
-			// schedule 내부 값 설정
-			schedule.conversation_id = message.conversation_id;
-			schedule.date = actions.input_date
-			schedule.content = actions.input_description
-			schedule.link = actions.input_link;
-				
-			const status = schedule.save(function(err){
-				if(err){
-					console.error(err); // DB save 오류
-					// res.json({result: 0});
-					return;
-				}
-				// res.json({result: 1});
-			});
-			console.log(status)
-			console.log('DB save OK')
-			
-		}catch(e){
-			// DB 오류
-			console.log('DB save rejected')
-			console.log(e)
-		}
+				var schedule = new Schedule();
+				schedule.conversation_id = message.conversation_id;
+				schedule.date = actions.input_date
+				schedule.content = actions.input_description
+				schedule.link = actions.input_link;
 
-		// 그런데 res.json 은 현재 post /callback 블록에서 switch 문마다 한번씩만 
-    	// 메모 추가 결과 채팅방 전송 여기도 약간 바뀐같네요, 제가 주석 조금 추가했습니다! 아 주석만 바뀌었네요~ 예전에 제가 추가한건데 구조가좀ㅇ ㅣ상해서 음
-		console.log(actions)
-		console.log(req.body.message)
-      return await libKakaoWork.sendMessage({
+				schedule.save(function(err){
+					if(err){
+						console.error(err) // DB save query 오류
+					}
+				});
+			}catch(err){
+				console.error(err) // DB 오류
+			}
+
+			console.log("actions",actions)
+			console.log("req.body.message",req.body.message)
+      libKakaoWork.sendMessage({
         conversationId: message.conversation_id,
   	    text: "메모가 추가되었습니다.",
 					blocks: [

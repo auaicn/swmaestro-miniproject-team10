@@ -58,11 +58,6 @@ const MAX_MEMOS_PER_PAGE = 10
 exports.showMemos = async ({ conversationId, currentPageNumber}) => {
 
 	console.log("currentPageNumber",currentPageNumber)
-	// getSchedule()
-	// database(mongod) 와 통신하는 부분 
-	// 1. conversation Id 를 가지고 전체 서치
-	// 2. 시간순 정렬
-	// 3. 현재 인덱스로 잘라서 출력
 	const dbEntries = getSchedule(conversationId);
 	const numEntries = dbEntries.length;
 	const maxPageNumber = parseInt(numEntries / MAX_MEMOS_PER_PAGE);
@@ -91,7 +86,7 @@ exports.showMemos = async ({ conversationId, currentPageNumber}) => {
 			text: '이전 메모 >',
 			action_type: 'submit_action',
 			action_name: 'browseMemo',
-			value: `${currentPageNumber + 1}`,
+			value: `browseMemo ${currentPageNumber + 1}`,
 			style: 'primary'
 		}
 	}else if (currentPageNumber === maxPageNumber){
@@ -100,7 +95,7 @@ exports.showMemos = async ({ conversationId, currentPageNumber}) => {
 			text: '< 최근 메모 ',
 			action_type: 'submit_action',
 			action_name: 'browseMemo',
-			value: `${currentPageNumber - 1}`,
+			value: `browseMemo ${currentPageNumber - 1}`,
 			style: 'default'
 		}
 	}else{
@@ -112,7 +107,7 @@ exports.showMemos = async ({ conversationId, currentPageNumber}) => {
 					text: '< 최근 메모',
 					action_type: 'submit_action',
 					action_name: 'browseMemo',
-					value: `${currentPageNumber - 1}`,
+					value: `browseMemo ${currentPageNumber - 1}`,
 					style: 'default',
 				},
 				{	
@@ -120,7 +115,7 @@ exports.showMemos = async ({ conversationId, currentPageNumber}) => {
 					text: '이전 메모 >',
 					action_type: 'submit_action',
 					action_name: 'browseMemo',
-					value: `${currentPageNumber + 1}`,
+					value: `browseMemo ${currentPageNumber + 1}`,
 					style: 'primary'
 				}			
 			]

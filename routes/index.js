@@ -86,7 +86,7 @@ router.get('/', async (req, res, next) => {
             type: 'button',
             action_type: 'submit_action',
 						action_name: 'browseMemo',
-            value: '1',
+            value: 'browseMemo 1',
             text: '메모 열람',
             style: 'default',
           },
@@ -167,13 +167,19 @@ router.post('/request', async (req, res, next) => {
 router.post('/callback', async (req, res, next) => {
 	 console.log(req.body);
 	const { action_name, message, actions, action_time, value } = req.body;
+
+	let currentPageNumber = 0, let newValue = value;
+	if (value.includes('browseMemo'))
+    {
+        currentPageNumber = parseInt(value.slice(11));
+        newValue = 'browseMemo';
+    }
 	
 	// value 값만 인식
-  switch (value) {
+  switch (newValue) {
 		case 'browseMemo':
-			const conversationId = req.body.message.conversation_id; 
-			const currentPageNumber = parseInt(value)
-			libKakaoWork.showMemos({conversationId, currentPageNumber})
+			const conversationId = req.body.message.conversation_id;
+			libKakaoWork.showMemos({conversationId, currentPageNumber});
 			break;
 		case 'home':
 			return libKakaoWork.sendMessage({
@@ -202,7 +208,7 @@ router.post('/callback', async (req, res, next) => {
             text: '메모 열람',
             action_type: 'submit_action',
 						action_name: 'browseMemo',
-            value: '1',
+            value: 'browseMemo 1',
             style: 'default',
           },
         ],

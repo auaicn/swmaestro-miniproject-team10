@@ -44,23 +44,20 @@ exports.sendMessage = async ({ conversationId, text, blocks }) => {
   return res.data.message;
 };
 	
-function getSchedule(conversationId){
-	Schedule.find({conversation_id: req.params.conversationId},function(err,schedules){
-    if(err) return res.status(500).json({error:err});
-    if(!schedules) return res.status(404).json({error: 'schedules not found'});
-    console.log(schedules);
-	return schedules;
-  }).sort({date:1})
-}
-	
 const MAX_MEMOS_PER_PAGE = 10
 // 메시지 전송 (3)
 exports.showMemos = async ({ conversationId, currentPageNumber}) => {
 
 	console.log("currentPageNumber",currentPageNumber)
-	const dbEntries = getSchedule(conversationId);
+	let dbEntries = await axios.create({
+		baseURL: 'https://swmaestro-miniprojec-igoeb.run.goorm.io',
+	}).get(`/getSchedule/${conversationId}`);
+	dbEntries = dbEntries.data
 	const numEntries = dbEntries.length;
-	const maxPageNumber = parseInt(numEntries / MAX_MEMOS_PER_PAGE);
+	let maxPageNumber = parseInt(numEntries / MAX_MEMOS_PER_PAGE);
+	if (numEntries % MAX_MEMOS_PER_PAGE != 0) {
+		maxPageNumber += 1;
+	}
 
 	let actualUserMemos = [];
 	const startMemoIndex = MAX_MEMOS_PER_PAGE * (currentPageNumber - 1);
@@ -150,7 +147,7 @@ exports.showMemos = async ({ conversationId, currentPageNumber}) => {
 				text: '기본 화면으로',
 				action_type: 'submit_action',
 				action_name: 'home',
-				value: 'hello',
+				value: 'home',
 				style: 'default',
 			}
 		])

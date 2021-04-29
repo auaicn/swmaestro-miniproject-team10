@@ -168,7 +168,7 @@ router.post('/callback', async (req, res, next) => {
 	 console.log(req.body);
 	const { action_name, message, actions, action_time, value } = req.body;
 
-	let currentPageNumber = 0, let newValue = value;
+	let currentPageNumber = 0, newValue = value;
 	if (value.includes('browseMemo'))
     {
         currentPageNumber = parseInt(value.slice(11));

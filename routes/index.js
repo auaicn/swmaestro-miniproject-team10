@@ -78,6 +78,7 @@ router.get('/', async (req, res, next) => {
             type: 'button',
             action_type: 'call_modal',
             value: 'addMemo',
+			action_name: 'addMemo',
             text: '메모 추가',
             style: 'default',
           },
@@ -103,7 +104,7 @@ router.get('/', async (req, res, next) => {
 router.post('/request', async (req, res, next) => {
   console.log(req.body);
   const { message, value } = req.body;
-
+	
   switch (value) {
     case 'addMemo':
       // 메모 추가용 모달
@@ -113,6 +114,7 @@ router.post('/request', async (req, res, next) => {
 		  accept: "확인",
 		  decline: "취소",
 		  value: "addMemoResult", 
+		  action_name: 'addMemoResult',
 		  blocks: [
 			{
 			  type: "label",
@@ -163,8 +165,11 @@ router.post('/request', async (req, res, next) => {
 });
 
 router.post('/callback', async (req, res, next) => {
+	 console.log(req.body);
 	const { action_name, message, actions, action_time, value } = req.body;
-  switch (action_name) {
+	
+	// value 값만 인식
+  switch (value) {
 		case 'browseMemo':
 			const conversationId = req.body.message.conversation_id; 
 			const currentPageNumber = parseInt(value)
@@ -208,7 +213,7 @@ router.post('/callback', async (req, res, next) => {
 			var schedule = new Schedule();
 				
 			// schedule 내부 값 설정
-			schedule.conversation_id = message.conversation_id + ++count;
+			schedule.conversation_id = message.conversation_id;
 			schedule.date = actions.input_date
 			schedule.content = actions.input_description
 			schedule.link = actions.input_link;

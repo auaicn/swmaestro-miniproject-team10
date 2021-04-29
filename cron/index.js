@@ -5,6 +5,7 @@ const libKakaoWork = require('../libs/kakaoWork');
 exports.cronAlarmJob = () => {
   // 매 00분 30초마다 실행
   cron.schedule('30 * * * * *', async ()=> {
+	console.log("cron start");
 
     const startTime = new Date();
     startTime.setHours(startTime.getHours() + 9);
@@ -16,6 +17,8 @@ exports.cronAlarmJob = () => {
       if(err) {
         console.log(`cron error: '${err}'`);
       }
+		
+		console.log("schedules : ", schedules);
       
       schedules.map(schedule => sendMessage(schedule, startTime))
     })

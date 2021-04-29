@@ -65,29 +65,30 @@ router.get('/', async (req, res, next) => {
         text: '반갑습니다, 저는 나와의 채팅봇입니다!',
         blocks: [
           {
-      		type: "header",
-      		text: "나와의 채팅",
-			style: "blue"
-		  },
-		  {
-			type: "text",
-			text: "반갑습니다!\n메모 옵션을 선택해주세요.",
-			markdown: true
-		  },
-		  {
-			type: "button",
-			text: "메모 추가",
-			action_type: 'call_modal',
-			value: 'addMemo',
-			style: "default"
-		  },
-		  {
-			type: "button",
-			text: "메모 열람",
-			action_type: 'submit_action',
-			value: 'browseMemo', 
-			style: "default"
-		  }
+            type: 'header',
+            text: '나와의 채팅',
+            style: 'blue',
+          },
+          {
+            type: 'text',
+            text: '반갑습니다!\n메모 옵션을 선택해주세요.',
+            markdown: true,
+          },
+          {
+            type: 'button',
+            action_type: 'call_modal',
+            value: 'addMemo',
+            text: '메모 추가',
+            style: 'default',
+          },
+					{
+            type: 'button',
+            action_type: 'submit_action',
+						action_name: 'browseMemo',
+            value: '1',
+            text: '메모 열람',
+            style: 'default',
+          },
         ],
       })
     ),
@@ -161,35 +162,49 @@ router.post('/request', async (req, res, next) => {
   res.json({});
 });
 
-/*
-router.post('/createMemo', function(req, res) {
-  console.log(req.body);
-  const { message, actions, value } = req.body;
-	
-  var schedule = new Schedule();
-  schedule.conversation_id = req.body.conversation_id;
-  schedule.date = actions.input_date
-  schedule.content = actions.input_description
-  schedule.link = actions.input_link;
-	
-  schedule.save(function(err){
-    if(err){
-        console.error(err);
-        res.json({result: 0});
-        return;
-    }
-    res.json({result: 1});
-  });
-});
-*/
-
 router.post('/callback', async (req, res, next) => {
-  const { message, actions, value } = req.body;
-
-  switch (value) {
+	const { action_name, message, actions, action_time, value } = req.body;
+  switch (action_name) {
+		case 'browseMemo':
+			const conversationId = req.body.message.conversation_id; 
+			const currentPageNumber = parseInt(value)
+			libKakaoWork.showMemos({conversationId, currentPageNumber})
+			break;
+		case 'home':
+			return libKakaoWork.sendMessage({
+        conversationId: req.body.message.conversation_id,
+        text: '나와의 채팅',
+        blocks: [
+          {
+            type: 'header',
+            text: '나와의 채팅',
+            style: 'blue',
+          },
+          {
+            type: 'text',
+            text: '반갑습니다!\n메모 옵션을 선택해주세요.',
+            markdown: true,
+          },
+          {
+            type: 'button',
+            text: '메모 추가',
+            action_type: 'call_modal',
+            value: 'addMemo',
+            style: 'default',
+          },
+					{
+            type: 'button',
+            text: '메모 열람',
+            action_type: 'submit_action',
+						action_name: 'browseMemo',
+            value: '1',
+            style: 'default',
+          },
+        ],
+      })
+			break;
     case 'addMemoResult':
-		// DB에 데이터 저장
-		try{
+      try{
 			var schedule = new Schedule();
 				
 			// schedule 내부 값 설정
@@ -219,8 +234,7 @@ router.post('/callback', async (req, res, next) => {
     	// 메모 추가 결과 채팅방 전송 여기도 약간 바뀐같네요, 제가 주석 조금 추가했습니다! 아 주석만 바뀌었네요~ 예전에 제가 추가한건데 구조가좀ㅇ ㅣ상해서 음
 		console.log(actions)
 		console.log(req.body.message)
-		  
-      	return await libKakaoWork.sendMessage({
+      return await libKakaoWork.sendMessage({
         conversationId: message.conversation_id,
   	    text: "메모가 추가되었습니다.",
 					blocks: [

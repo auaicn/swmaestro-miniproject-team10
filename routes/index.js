@@ -56,7 +56,7 @@ router.get('/', async (req, res, next) => {
   const messages = await Promise.all([
     conversations.map((conversation) =>
 			libKakaoWork.sendMessage({
-        conversationId: req.body.message.conversation_id,
+        conversationId: conversation.id,
         text: '나와의 채팅',
         blocks: [
 					{

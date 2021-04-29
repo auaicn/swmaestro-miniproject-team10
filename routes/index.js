@@ -1,9 +1,10 @@
-// routes/index.js
 const express = require('express');
 const router = express.Router();
 
 const libKakaoWork = require('../libs/kakaoWork');
 const Schedule = require('../models/schedule');
+
+var count = 0;
 
 router.get('/getSchedule/:conversation_id', function(req,res){
   Schedule.find({conversation_id: req.params.conversation_id},function(err,schedules){
@@ -56,36 +57,37 @@ router.get('/', async (req, res, next) => {
   );
 
   // 생성된 채팅방에 메세지 전송 (3)
+  // 웰컴 메세지, 메모 추가 및 메모 열람 가능
   const messages = await Promise.all([
     conversations.map((conversation) =>
       libKakaoWork.sendMessage({
         conversationId: conversation.id,
-        text: '나와의 채팅',
+        text: '반갑습니다, 저는 나와의 채팅봇입니다!',
         blocks: [
           {
-            type: 'header',
-            text: '나와의 채팅',
-            style: 'blue',
-          },
-          {
-            type: 'text',
-            text: '반갑습니다!\n메모 옵션을 선택해주세요.',
-            markdown: true,
-          },
-          {
-            type: 'button',
-            action_type: 'call_modal',
-            value: 'addMemo',
-            text: '메모 추가',
-            style: 'default',
-          },
-					{
-            type: 'button',
-            action_type: 'call_modal',
-            value: 'browseMemo',
-            text: '메모 열람',
-            style: 'default',
-          },
+      		type: "header",
+      		text: "나와의 채팅",
+			style: "blue"
+		  },
+		  {
+			type: "text",
+			text: "반갑습니다!\n메모 옵션을 선택해주세요.",
+			markdown: true
+		  },
+		  {
+			type: "button",
+			text: "메모 추가",
+			action_type: 'call_modal',
+			value: 'addMemo',
+			style: "default"
+		  },
+		  {
+			type: "button",
+			text: "메모 열람",
+			action_type: 'submit_action',
+			value: 'browseMemo', 
+			style: "default"
+		  }
         ],
       })
     ),
@@ -93,65 +95,64 @@ router.get('/', async (req, res, next) => {
 
   // 응답값은 자유롭게 작성하셔도 됩니다.
   res.json({
-    users,
-    conversations,
-    messages,
+    result: true,
   });
 });
 
 router.post('/request', async (req, res, next) => {
+  console.log(req.body);
   const { message, value } = req.body;
 
   switch (value) {
     case 'addMemo':
-      // 설문조사용 모달 전송
+      // 메모 추가용 모달
       return res.json({
         view: {
-          title: 'modal title',
-          accept: '확인',
-          decline: '취소',
-          value: 'addMemoResult',
-          blocks: [
-            {
-              type: 'label',
-              text: '알림을 받을 날짜를 입력해주세요.',
-              markdown: true,
-            },
-            {
-              type: 'label',
-              text: '예: 2017-08-28 17:22:21',
-              markdown: true,
-            },
-            {
-              type: 'input',
-              name: 'input_date',
-              required: false,
-              placeholder: '날짜를 입력해주세요',
-            },
-						{
-              type: 'label',
-              text: '메모의 내용을 입력해주세요.',
-              markdown: true,
-            },
-            {
-              type: 'input',
-              name: 'input_description',
-              required: false,
-              placeholder: '내용을 입력해주세요',
-            },
-						{
-              type: 'label',
-              text: '첨부 링크를 입력해주세요.',
-              markdown: true,
-            },
-            {
-              type: 'input',
-              name: 'input_link',
-              required: false,
-              placeholder: '링크르 확인해주세요',
-            },
-          ],
-        },
+  		  title: "메모 추가",
+		  accept: "확인",
+		  decline: "취소",
+		  value: "addMemoResult", 
+		  blocks: [
+			{
+			  type: "label",
+			  text: "알림을 받을 날짜를 입력해주세요.",
+			  markdown: true
+			},
+			{
+			  type: "label",
+			  text: "예: 2017-08-28T17:22:21",
+			  markdown: true
+			},
+			{
+			  type: "input",
+			  name: "input_date",
+			  required: false,
+			  placeholder: "날짜를 입력해주세요."
+			},
+			{
+			  type: "label",
+			  text: "메모의 내용을 입력해주세요.",
+			  markdown: true
+			},
+			{
+			  type: "input",
+			  name: "input_description",
+			  required: false,
+			  placeholder: "내용을 입력해주세요."
+			},
+			{
+			  type: "label",
+			  text: "첨부 링크를 입력해주세요.",
+			  markdown: true
+			},
+			{
+			  type: "input",
+			  name: "input_link",
+			  required: false,
+			  placeholder: "링크를 입력해주세요."
+			}
+		  ]
+		}
       });
       break;
     default:
@@ -160,62 +161,103 @@ router.post('/request', async (req, res, next) => {
   res.json({});
 });
 
+/*
+router.post('/createMemo', function(req, res) {
+  console.log(req.body);
+  const { message, actions, value } = req.body;
+	
+  var schedule = new Schedule();
+  schedule.conversation_id = req.body.conversation_id;
+  schedule.date = actions.input_date
+  schedule.content = actions.input_description
+  schedule.link = actions.input_link;
+	
+  schedule.save(function(err){
+    if(err){
+        console.error(err);
+        res.json({result: 0});
+        return;
+    }
+    res.json({result: 1});
+  });
+});
+*/
 
-// routes/index.js
 router.post('/callback', async (req, res, next) => {
-  const { message, actions, action_time, value } = req.body; // 설문조사 결과 확인 (2)
+  const { message, actions, value } = req.body;
 
   switch (value) {
     case 'addMemoResult':
-      // 설문조사 응답 결과 메세지 전송 (3)
-      await libKakaoWork.sendMessage({
+		// DB에 데이터 저장
+		try{
+			var schedule = new Schedule();
+				
+			// schedule 내부 값 설정
+			schedule.conversation_id = message.conversation_id + ++count;
+			schedule.date = actions.input_date
+			schedule.content = actions.input_description
+			schedule.link = actions.input_link;
+				
+			const status = schedule.save(function(err){
+				if(err){
+					console.error(err); // DB save 오류
+					// res.json({result: 0});
+					return;
+				}
+				// res.json({result: 1});
+			});
+			console.log(status)
+			console.log('DB save OK')
+			
+		}catch(e){
+			// DB 오류
+			console.log('DB save rejected')
+			console.log(e)
+		}
+
+		// 그런데 res.json 은 현재 post /callback 블록에서 switch 문마다 한번씩만 
+    	// 메모 추가 결과 채팅방 전송 여기도 약간 바뀐같네요, 제가 주석 조금 추가했습니다! 아 주석만 바뀌었네요~ 예전에 제가 추가한건데 구조가좀ㅇ ㅣ상해서 음
+		console.log(actions)
+		console.log(req.body.message)
+		  
+      	return await libKakaoWork.sendMessage({
         conversationId: message.conversation_id,
-        text: '메모가 추가되었습니다!',
-        blocks: [
-          {
-            type: 'text',
-            text: '추가된 메모',
-            markdown: true,
-          },
-          {
-            type: 'text',
-            text: '추가하신 메모입니다',
-            markdown: true,
-          },
-          {
-            type: 'description',
-            term: '시간',
-            content: {
-              type: 'text',
-							text: "2020년 9월 16일 7시",
-              markdown: false,
-            },
-            accent: true,
-          },
-          {
-            type: 'description',
-            term: '메모 내용',
-            content: {
-              type: 'text',
-							text: "[임시] Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum enim nisi, ultrices ac blandit et",							
-              markdown: false,
-            },
-            accent: true,
-          },
-					{
-						type: 'context',
-						content: {
-              type: 'text',
-              text: "[관련 링크](https://www.naver.com/)",
-              markdown: true,
-            },
-						image:{
-							type:'image_link',
-url:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADgCAMAAADCMfHtAAAAclBMVEUhxgMfxwL///8ExACz5q9M0Ds5zCjf+dvs++n9//x52m74/vdf1EwAxQCP4YOk55nm+eL0/fKg4ppIzzNQ0EFw2WNm11l+3HN222kuyxza9tas6aO166y87bWI3nxT0UXE772U4orM8cWr6qGb5JHV9dBTaNN7AAADAklEQVR4nO3bXW/aQBCF4d2ZAiZmA4kJhoaPhKT//y/WNFJU1ev1SpjiMzrvJfGFH83ayUTCiZTPlTNa9VyKk8LrvW/kdmkonFT+3rdx09ZuZniCX/2gED4K8aMQPwrxoxA/CvGjED8K8aMQPwrxoxA/CvGjED8K8aMQPwrxoxA/CvGjED8K8aMQPwrxoxA/CvGjED8K8aMQPwrxoxA/CvGjED8K8aMwK3+bBrgzR2FmFFJI4VVRmBWFFFJ4VUMLNV5U0HfpAHfmhhe+PESqNyECnNSxa7e7cQunM5m3k6dNe4r6GL20mOiYha4RRvu5awnDY/TKkQt9l1BeW0O0Jiy3/xIxhZ2nVGRWBQvC7hmK7E3MMCWc12pcKKu14gsTz2HTweELkzOU+VGNC2V1UuNCeXPWhfIewIXpN83l/heKLeydoZx31oWyVOvC71URU9j7HMplVXTAwowZfq+KhoXlixoXymyqsMKc57BpH2CFeTOU8kGNC2VVqXGhHIJ1YbMqYgoz3zRfEEhh9gybVdG8UI61JWEZo7wiCruew49z5MM5orBrhp+np+jndoRL/TQvdGfjwqCLwoSw602zDF7fTQi7Z9j87M26UNcr40Kvx/hvQDtC7w/4wsSb5jLEKuOcjlzYM0OtY3+gWhJ63aML06fU+9C/XY1c2DdDr9u+c4ou9BrfCi0Jp7+ghX3P4YW4Sa+KIxf2z7AhpldFA0K/O1sXpldFC8L0qjhyYcab5s85TayKIxfmzdCHU/c5tSH04WhdmFgVrQh10rUqjlyY+aa5EOuOf2mYEfrQsSqOXNic0nnZLibsuLRcjVzoTotYVRvofRW9dPHXiRik//PtvBgQ9dt5QzbAnTkKM6OQQgqvisKsKKSQwquiED8K8aMQPwrxoxA/CvGjED8K8aMQPwrxoxA/CvGjED8K8aMQPwrxoxA/CvGjED8K8aMQPwrxoxA/CvGjED8K8aMQPwrxoxA/CvGjED8K8aMQv5l5oUzvfQe3beKkcAN933aU+eI3BUZLMIBgBm4AAAAASUVORK5CYII='
-						}
+  	    text: "메모가 추가되었습니다.",
+					blocks: [
+				{
+					type: "header",
+					text: "메모가 추가되었습니다.",
+					style: "blue"
+				},
+				{
+					type: "description",
+					term: "일시",
+					content: {
+					type: "text",
+					text: actions.input_date,
+					markdown: false
+					},
+					accent: true
+				},
+				{ 
+					type: "text",
+					text: actions.input_description,
+					markdown: true
+				},
+				{
+					type: "context",
+					content: {
+					type: "text",
+					text: actions.input_link,
+					markdown: true
+					},
+					image: {
+					type: "image_link",
+					url: "https://img.icons8.com/ios/72/domain.png"
 					}
-        ],
-      });
+				}
+				]
+			});
       break;
     default:
   }

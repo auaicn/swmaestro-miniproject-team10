@@ -13,8 +13,31 @@ const kakaoInstance = axios.create({
 
 // 유저 목록 검색 (1)
 exports.getUserList = async () => {
-  const res = await kakaoInstance.get('/v1/users.list');
-  return res.data.users;
+	let realUserList = [];
+  let res = await kakaoInstance.get('/v1/users.list');
+	
+	while (res.data.success) {
+		for (let user of res.data.users) {
+			realUserList.push(user);
+		}
+		
+		if (res.data.cursor) {
+			res = await axios.get('https://api.kakaowork.com/v1/users.list',
+								 {
+				headers: {
+					Authorization: `Bearer ${Config.keys.kakaoWork.bot}`,
+				},
+				params: {
+					cursor: res.data.cursor,
+				},
+			});
+		}
+		else {
+			break;
+		}
+	}
+	// console.log(realUserList);
+  return realUserList;
 };
 
 // 채팅방 생성 (2)
@@ -39,7 +62,7 @@ exports.sendMessage = async ({ conversationId, text, blocks }) => {
   return res.data.message;
 };
 	
-const MAX_MEMOS_PER_PAGE = 10
+const MAX_MEMOS_PER_PAGE = 5
 
 const months = new Array()
 
@@ -61,9 +84,11 @@ exports.showMemos = async ({ conversationId, currentPageNumber}) => {
 
 	console.log("currentPageNumber",currentPageNumber)
 	let dbEntries = await axios.create({
-		baseURL: 'https://swmaestro-miniprojec-igoeb.run.goorm.io',
+		baseURL: 'https://swm-chatbot-0ylzq4-y17dxj.run.goorm.io',
 	}).get(`/getSchedule/${conversationId}`);
 	dbEntries = dbEntries.data
+	
+	// console.log(dbEntries.length)
 	
 	const numEntries = dbEntries.length;
 	console.log("numEntries",numEntries)
@@ -101,7 +126,7 @@ exports.showMemos = async ({ conversationId, currentPageNumber}) => {
 			},
 			{
 				type: 'text',
-				text: '*최신순* 으로 정렬된 메시지입니다.\n자세히 보실 메모를 *선택*해주세요 👇🏻',
+				text: '*최신순* 으로 정렬된 메시지입니다.',
 				markdown: true,
 			}
 			,
@@ -158,7 +183,7 @@ exports.showMemos = async ({ conversationId, currentPageNumber}) => {
 	// 이전, 다음 버튼 부분.
 	let varyingButtons = []
 	if (currentPageNumber === 1){
-		if (numEntries <= 10);
+		if (numEntries <= MAX_MEMOS_PER_PAGE);
 		else
 			varyingButtons = [{
 				type: 'button',

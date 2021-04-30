@@ -52,12 +52,13 @@ router.get('/', async (req, res, next) => {
     users.map((user) => libKakaoWork.openConversations({ userId: user.id }))
   );
 	
+	console.log(users)
   // 웰컴 메세지, 메모 추가 및 메모 열람 가능
   const messages = await Promise.all([
     conversations.map((conversation) =>
 			libKakaoWork.sendMessage({
         conversationId: conversation.id,
-        text: '나와의 채팅',
+        text: '나와의채팅(10팀) - 일정/메모등록 알림이',
         blocks: [
 					{
 						type: 'image_link',
@@ -171,7 +172,7 @@ router.post('/callback', async (req, res, next) => {
 		case 'home':
 			libKakaoWork.sendMessage({
         conversationId: req.body.message.conversation_id,
-        text: '나와의 채팅',
+        text: '나와의채팅(10팀) - 일정/메모등록 알림이',
         blocks: [
 					{
 						type: 'image_link',
